@@ -66,7 +66,7 @@ SRC_AARCH32_GCC 		?= https://developer.arm.com/-/media/Files/downloads/gnu/14.3.
 
 # Please keep in sync with br-ext/configs/toolchain-aarch64
 AARCH64_PATH 			?= $(TOOLCHAIN_ROOT)/aarch64
-AARCH64_CROSS_COMPILE 		?= $(AARCH64_PATH)/bin/aarch64-linux-gnu-
+AARCH64_CROSS_COMPILE 		?= $(AARCH64_PATH)/bin/aarch64-none-linux-gnu-
 AARCH64_GCC_VERSION 		?= arm-gnu-toolchain-14.3.rel1-x86_64-aarch64-none-linux-gnu
 SRC_AARCH64_GCC 		?= https://developer.arm.com/-/media/Files/downloads/gnu/14.3.rel1/binrel/$(AARCH64_GCC_VERSION).tar.xz
 
