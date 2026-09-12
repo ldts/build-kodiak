@@ -6,3 +6,9 @@
 gdb
 pi3.cfg
 .hafnium_checkout
+# Fetched artifacts (populated by 'make fetch-blobs')
+/kodiak/blobs/
+/kodiak/overlay/
+/oe-core/
+/yocto/
+/bitbake/

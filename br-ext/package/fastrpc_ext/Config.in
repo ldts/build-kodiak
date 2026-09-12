@@ -1,0 +1,15 @@
+config BR2_PACKAGE_FASTRPC_EXT
+	bool "fastrpc"
+	select BR2_PACKAGE_LIBYAML
+	select BR2_PACKAGE_LIBBSD
+	help
+	  Qualcomm FastRPC userspace library and the fastrpc_test
+	  validation tool. fastrpc_test exercises CPU<->DSP remote
+	  procedure calls by loading a payload onto a coprocessor
+	  (e.g. the CDSP), running it and checking the response.
+
+	  Used here to validate the OP-TEE PAS (Peripheral Authentication
+	  Service) coprocessor load/reset sequences: a passing run proves
+	  OP-TEE brought the coprocessor up correctly.
+
+	  https://github.com/qualcomm/fastrpc
