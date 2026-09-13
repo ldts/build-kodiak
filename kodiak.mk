@@ -348,13 +348,18 @@ BL2_ELF       = $(TF_A_PATH)/build/rb3gen2/release/bl2/bl2.elf
 # used to sign the TF-A-built BL2 into tz.mbn with an OEM TEST key.  Fetched from
 # the public Qualcomm Software Center (no account required).
 SECTOOL_MAX_RETRIES ?= 5
-SECTOOL_ZIP   = https://softwarecenter.qualcomm.com/api/download/software/tools/Qualcomm_Security_Tools/All/1.45.0/1.45.zip
+SECTOOL_VER   ?= 1.50
+SECTOOL_ZIP   = https://softwarecenter.qualcomm.com/api/download/software/tools/Qualcomm_Security_Tools/All/1.50.0/$(SECTOOL_VER).zip
+
 SECTOOL_DIR  ?= $(ROOT)/toolchains/sectools
-SECTOOL_PATH ?= $(SECTOOL_DIR)/Linux
+# The zip unpacks to a top-level $(SECTOOL_VER)/ directory (1.50/Linux/sectools).
+SECTOOL_PATH ?= $(SECTOOL_DIR)/$(SECTOOL_VER)/Linux
 SECTOOL       = $(SECTOOL_PATH)/sectools
 TZ_PROFILE    = $(CURDIR)/kodiak/security/kodiak_tzt_security_profile.xml
 
-# dlsectool — download and unpack sectools, retrying on transient failures.
+# dlsectool — download and unpack sectools, retrying on transient failures.  If
+# the download cannot be completed, dlsectool exits non-zero; sign-bl2 then fails
+# and the tfa target warns and falls back to the pre-signed kodiak/input/tz.mbn.
 define dlsectool
 	@retries=0; \
 	while [ ! -x "$(SECTOOL)" ]; do \
