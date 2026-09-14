@@ -1044,14 +1044,14 @@
         <div class="vchain-left"><div class="vchain-dot yel"></div><div class="vchain-line"></div></div>
         <div class="vchain-content">
           <strong>XBL — Secondary Boot Loader</strong>
-          <small>Qualcomm proprietary. Initialises DDR, clocks, power rails. Loads and verifies BL2 (tz.mbn).</small>
+          <small>Qualcomm proprietary. Initialises DDR, clocks, power rails. Loads and verifies BL2 (tz.mbn), and loads the FIP (uefi.elf) into DRAM at <code>0x9FC0_0000</code>.</small>
         </div>
       </div>
       <div class="vchain-row">
         <div class="vchain-left"><div class="vchain-dot"></div><div class="vchain-line"></div></div>
         <div class="vchain-content">
           <strong>BL2 — TF-A (tz.mbn, signed)</strong>
-          <small>Runs at EL3. Loads BL31, BL32 (OP-TEE) and BL33 (U-Boot) from the FIP image (uefi.elf), then hands off to BL31.</small>
+          <small>Runs at EL3. Uses TF-A's memory-mapped IO backend (<code>io_memmap</code>) to read the FIP already resident in DRAM — no storage access — extracting BL31, BL32 (OP-TEE) and BL33 (U-Boot) by UUID, then hands off to BL31.</small>
         </div>
       </div>
       <div class="vchain-row">
