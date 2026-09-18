@@ -167,7 +167,7 @@ make flash-efi</pre>
       <div class="label">Boot-chain change — OP-TEE OS, TF-A or U-Boot</div>
 <pre><span class="cmt"># rebuild just the component you touched (incremental — seconds–minutes)</span>
 make optee-os        <span class="cmt"># or:  make tfa   /   make u-boot</span>
-make loader          <span class="cmt"># build uefi.elf + sign BL2 → tz.mbn (sectools)</span>
+make loader          <span class="cmt"># build uefi.elf + tz.mbn (pre-signed; OEM signing disabled)</span>
 make flash-loader    <span class="grn"># reflash the boot chain</span></pre>
     </div>
     <div>

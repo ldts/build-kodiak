@@ -7,8 +7,8 @@
 #     kodiak/output/efi.bin      FAT image containing uki.efi (UKI)
 #
 #   Boot-image path:
-#     kodiak/output/tz.mbn       BL2 built by TF-A, signed with sectools (OEM
-#                                TEST key); falls back to kodiak/input/tz.mbn
+#     kodiak/output/tz.mbn       Pre-signed BL2 from kodiak/input/tz.mbn (OEM
+#                                sectools signing disabled; SIGN_BL2=1 to enable)
 #     kodiak/output/uefi.elf     FIP image (OP-TEE + U-Boot)
 #
 # Main targets
@@ -17,15 +17,15 @@
 #   clean          Clean all components
 #
 #   efi            (Re)build the UKI FAT image from Linux + Buildroot initramfs
-#   loader         Build uefi.elf (FIP) and tz.mbn (TF-A BL2 signed by
-#                  sectools) via optee-os, u-boot, tfa
+#   loader         Build uefi.elf (FIP) and tz.mbn (pre-signed kodiak/input/
+#                  tz.mbn; SIGN_BL2=1 to OEM-sign) via optee-os, u-boot, tfa
 #
 #   optee-os       Build OP-TEE OS
 #   u-boot         Build U-Boot
-#   tfa            Build TF-A FIP + BL2; sign BL2 with sectools -> tz.mbn
-#                  (WARNs and uses kodiak/input/tz.mbn if signing fails)
+#   tfa            Build TF-A FIP + BL2; use pre-signed kodiak/input/tz.mbn
+#                  (OEM signing disabled; SIGN_BL2=1 to sign with sectools)
 #   sectools       Download the Qualcomm signing tool (auto-invoked by sign-bl2)
-#   sign-bl2       Sign the TF-A BL2 into tz.mbn (OEM TEST key)
+#   sign-bl2       Sign the TF-A BL2 into tz.mbn (OEM TEST key; manual/SIGN_BL2=1)
 #   linux          Build the kernel Image and DTBs
 #   linux-defconfig Configure the kernel (auto-invoked by linux if needed)
 #   buildroot      Build the root filesystem (via common.mk)
@@ -228,7 +228,7 @@ help:
 	@echo "  make loader"
 	@echo "    Intermediate: optee-os, u-boot, tfa"
 	@echo "    Produces:     kodiak/output/uefi.elf — FIP image (OP-TEE + U-Boot) at 0x9fc00000"
-	@echo "                  kodiak/output/tz.mbn   — TF-A BL2 signed by sectools (or pre-signed fallback)"
+	@echo "                  kodiak/output/tz.mbn   — pre-signed kodiak/input/tz.mbn (SIGN_BL2=1 to OEM-sign)"
 	@echo ""
 	@echo "Top-level targets"
 	@echo "  all            Build OP-TEE OS, U-Boot, TF-A, Linux, Buildroot, efi.bin"
@@ -237,9 +237,9 @@ help:
 	@echo "Component targets"
 	@echo "  optee-os       Build OP-TEE OS"
 	@echo "  u-boot         Build U-Boot (\$$(U-BOOT_CONFIG))"
-	@echo "  tfa            Build TF-A FIP + BL2; sign BL2 -> tz.mbn (sectools), else use pre-signed"
+	@echo "  tfa            Build TF-A FIP + BL2; use pre-signed tz.mbn (SIGN_BL2=1 to OEM-sign)"
 	@echo "  sectools       Download the Qualcomm signing tool"
-	@echo "  sign-bl2       Sign the TF-A BL2 into tz.mbn (OEM TEST key)"
+	@echo "  sign-bl2       Sign the TF-A BL2 into tz.mbn (OEM TEST key; manual / SIGN_BL2=1)"
 	@echo "  linux          Build the kernel Image + DTBs (runs linux-defconfig if .config is absent)"
 	@echo "  linux-defconfig  Apply \$$(LINUX_DEFCONFIG) and the kodiak config (TEE/OP-TEE/PAS/venus, MODULES=n)"
 	@echo "  buildroot      Build the root filesystem"
@@ -247,7 +247,7 @@ help:
 	@echo "  efi            Rebuild Buildroot rootfs + kernel, build UKI, inject into kodiak/output/efi.bin"
 	@echo ""
 	@echo "Boot-image targets"
-	@echo "  loader         Build uefi.elf (FIP) + tz.mbn (TF-A BL2 signed by sectools)"
+	@echo "  loader         Build uefi.elf (FIP) + tz.mbn (pre-signed; SIGN_BL2=1 to OEM-sign)"
 	@echo ""
 	@echo "Flash targets"
 	@echo "  flash-loader   Flash tz.mbn + uefi.elf via QDL"
@@ -330,10 +330,12 @@ u-boot-clean:
 # Build order:  optee-os → u-boot → tfa (BL32=tee-raw.bin, BL33=u-boot.bin)
 #
 # Generates:
-#   kodiak/output/tz.mbn    BL2 built by TF-A and signed with sectools (OEM TEST
-#                           key).  If signing fails (e.g. sectools cannot be
-#                           downloaded), a WARNING is printed and the pre-signed
-#                           kodiak/input/tz.mbn is used instead (error if absent).
+#   kodiak/output/tz.mbn    Pre-signed BL2 copied from kodiak/input/tz.mbn.  OEM
+#                           BL2 signing with sectools is DISABLED by default: the
+#                           current xbl_sec cannot yet verify OEM-only signed
+#                           binaries, so an OEM-signed tz.mbn fails to boot.  Set
+#                           SIGN_BL2=1 to re-enable it once the xbl verification
+#                           image is released.
 #   kodiak/output/uefi.elf  FIP ELF (OP-TEE OS + U-Boot) at 0x9fc00000
 ################################################################################
 TF_A_EXPORTS  = CROSS_COMPILE="$(AARCH64_CROSS_COMPILE)"
@@ -384,9 +386,10 @@ sectools:
 	$(call dlsectool)
 
 # sign-bl2 — sign the freshly built BL2 into tz.mbn (OEM TEST key).  Exits non-
-# zero if sectools cannot be installed, the BL2 is missing, or signing errors;
-# the tfa target relies on this to decide whether to fall back to a pre-signed
-# tz.mbn.
+# zero if sectools cannot be installed, the BL2 is missing, or signing errors.
+# NOTE: not invoked by the tfa target by default — OEM BL2 signing is disabled
+# until the xbl verification image is released (tfa runs it only if SIGN_BL2=1).
+# Can still be run manually to produce an OEM-signed tz.mbn for testing.
 sign-bl2: sectools
 	@test -f $(BL2_ELF) || { echo "sign-bl2: $(BL2_ELF) not found — run 'make tfa' first"; exit 1; }
 	@mkdir -p $(CURDIR)/kodiak/output
@@ -404,16 +407,28 @@ tfa: optee-os u-boot verify-qtiseclib
 		BL32=$(BL32_BIN) \
 		BL33=$(BL33_BIN) \
 		fip all
-	@# tz.mbn: by default build+sign the BL2 with sectools.  On any failure warn
-	@# and fall back to the pre-signed kodiak/input/tz.mbn (error if absent).
-	@if $(MAKE) --no-print-directory sign-bl2; then \
-		: ; \
+	@# tz.mbn: OEM BL2 signing is DISABLED by default.  The current device xbl_sec
+	@# cannot yet verify OEM-only signed binaries, so an OEM-signed tz.mbn fails to
+	@# boot; we always use the pre-signed kodiak/input/tz.mbn (error if absent).
+	@# Set SIGN_BL2=1 to re-enable sectools OEM signing once the xbl verification
+	@# image is released (see kodiak/security/README.txt).
+	@if [ -n "$(SIGN_BL2)" ]; then \
+		if $(MAKE) --no-print-directory sign-bl2; then \
+			: ; \
+		elif [ -f $(CURDIR)/kodiak/input/tz.mbn ]; then \
+			echo "WARNING: BL2 signing failed — falling back to pre-signed kodiak/input/tz.mbn"; \
+			mkdir -p $(CURDIR)/kodiak/output; \
+			cp $(CURDIR)/kodiak/input/tz.mbn $(CURDIR)/kodiak/output/tz.mbn; \
+		else \
+			echo "ERROR: BL2 signing failed and no pre-signed kodiak/input/tz.mbn to fall back to"; \
+			exit 1; \
+		fi; \
 	elif [ -f $(CURDIR)/kodiak/input/tz.mbn ]; then \
-		echo "WARNING: BL2 signing failed — falling back to pre-signed kodiak/input/tz.mbn"; \
+		echo "Using pre-signed kodiak/input/tz.mbn (OEM BL2 signing disabled; set SIGN_BL2=1 to enable)"; \
 		mkdir -p $(CURDIR)/kodiak/output; \
 		cp $(CURDIR)/kodiak/input/tz.mbn $(CURDIR)/kodiak/output/tz.mbn; \
 	else \
-		echo "ERROR: BL2 signing failed and no pre-signed kodiak/input/tz.mbn to fall back to"; \
+		echo "ERROR: no pre-signed kodiak/input/tz.mbn (OEM BL2 signing disabled; set SIGN_BL2=1 to sign)"; \
 		exit 1; \
 	fi
 	cd $(TF_A_PATH) && $(TF_A_EXPORTS) \
@@ -579,8 +594,9 @@ efi-clean:
 # Loader image (tz.mbn + uefi.elf)
 #
 # Builds the FIP (uefi.elf) via optee-os → u-boot → tfa.  The tfa target builds
-# the BL2 and signs it into kodiak/output/tz.mbn with sectools; if signing fails
-# it WARNs and falls back to a pre-signed kodiak/input/tz.mbn (error if absent).
+# the BL2 but, by default, uses the pre-signed kodiak/input/tz.mbn (error if
+# absent) — OEM sectools signing is disabled until the xbl verification image is
+# released; set SIGN_BL2=1 to OEM-sign the freshly built BL2 instead.
 ################################################################################
 .PHONY: loader loader-clean
 

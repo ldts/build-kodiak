@@ -2,17 +2,27 @@ Security assets for the tfa target.
 
 BL2 (tz.mbn)
 ────────────
-By default the tfa target builds BL2 from TF-A and signs it into
+OEM BL2 signing is DISABLED by default.  The device's XBL security stage
+(xbl_sec) is not yet able to verify OEM-only signed binaries, so a BL2 signed
+with our OEM key fails to boot.  Until then the tfa target simply copies the
+pre-signed BL2 at kodiak/input/tz.mbn (a QTI-signed / production-signed image)
+to kodiak/output/tz.mbn, erroring only if that pre-signed image is absent.
+
+We are working to release the XBL verification image (updated xbl_sec) that can
+verify OEM-only signed binaries as soon as possible.  Once it is available, OEM
+signing can be re-enabled — no changes to this profile are needed:
+
+    make SIGN_BL2=1 tfa    # build BL2 and OEM-sign it into tz.mbn via sectools
+
+When enabled, the tfa target builds BL2 from TF-A and signs it into
 kodiak/output/tz.mbn with Qualcomm's open-source sectools, using an OEM TEST key
 and the kodiak_tzt_security_profile.xml profile in this directory (image id
 TZ-TEE).  sectools is downloaded on demand from the public Qualcomm Software
-Center — no account required (see SECTOOL_ZIP in kodiak.mk).
+Center — no account required (see SECTOOL_ZIP in kodiak.mk).  If signing then
+fails (e.g. sectools cannot be downloaded), it WARNs and falls back to the
+pre-signed kodiak/input/tz.mbn.
 
-If signing fails (e.g. sectools cannot be downloaded), the tfa target prints a
-WARNING and falls back to a pre-signed BL2 at kodiak/input/tz.mbn (a QTI-signed
-or otherwise production-signed image), erroring only if that is also absent.
-
-    make sign-bl2      # sign the already-built BL2 explicitly
+    make sign-bl2      # sign the already-built BL2 explicitly (OEM TEST key)
     make sectools      # just fetch the signing tool
 
 kodiak_tzt_security_profile.xml
