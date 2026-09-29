@@ -1,0 +1,12 @@
+config BR2_PACKAGE_QRTR_EXT
+	bool "qrtr"
+	help
+	  Qualcomm IPC Router (QRTR) userspace: libqrtr and the
+	  qrtr-ns name service daemon (plus qrtr-cfg, qrtr-lookup).
+
+	  qrtr-ns provides QMI service discovery, required for the DSP
+	  subsystems to register their protection-domain "servreg"
+	  service. Without it the DSP rootPD never finishes coming up
+	  and FastRPC stalls with a GLINK intent timeout.
+
+	  https://github.com/linux-msm/qrtr

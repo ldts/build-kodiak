@@ -1,0 +1,12 @@
+config BR2_PACKAGE_TQFTPSERV_EXT
+	bool "tqftpserv"
+	select BR2_PACKAGE_QRTR_EXT
+	select BR2_PACKAGE_ZSTD
+	help
+	  TFTP-over-QRTR file server (tqftpserv). Qualcomm DSP firmware
+	  reads files from the apps root filesystem over QRTR via this
+	  server; the CDSP FastRPC rootPD needs it to load its runtime.
+	  Without it the fastrpc GLINK channel opens but the DSP never
+	  services it (GLINK intent timeout).
+
+	  https://github.com/linux-msm/tqftpserv
