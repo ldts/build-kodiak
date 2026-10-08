@@ -718,8 +718,16 @@ BLOBS_VERSION  = 00142
 BLOBS_DIR      = $(CURDIR)/kodiak/blobs
 BLOBS_STAMP    = $(BLOBS_DIR)/.fetch-complete
 
-BOOTBIN_URL    = https://softwarecenter.qualcomm.com/nexus/generic/product/chip/tech-package/QCM6490_bootbinaries.1.0/qcm6490_bootbinaries.1.0-test-device-public/$(BLOBS_VERSION)/QCM6490_bootbinaries_$(BLOBS_VERSION).zip
+BOOTBIN_BASE   = https://softwarecenter.qualcomm.com/nexus/generic/product/chip/tech-package/QCM6490_bootbinaries.1.0/qcm6490_bootbinaries.1.0-test-device-public/$(BLOBS_VERSION)
+BOOTBIN_URL    = $(BOOTBIN_BASE)/QCM6490_bootbinaries_$(BLOBS_VERSION).zip
 BOOTBIN_SHA256 = 22e45047b3349a1611d27167616dd04f08e8351120ac121f6921b47b9f709216
+
+# Immutable companion archive — cpucp.elf is not in the main bootbinaries zip;
+# it ships in this separate "immutable" archive, the same split meta-qcom's
+# firmware-qcom-boot-qcs6490 recipe fetches (main zip +
+# QCM6490_bootbinaries_immutable zip, both deployed together).
+BOOTBIN_IMM_URL    = $(BOOTBIN_BASE)/QCM6490_bootbinaries_immutable_$(BLOBS_VERSION).zip
+BOOTBIN_IMM_SHA256 = a5f48c1646eb640377b66fa13064f2efe6f667e60f714b0e06c34dc66b7c94fb
 
 CDT_URL        = https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS6490/cdt/rb3gen2-core-kit.zip
 CDT_SHA256     = 0fe1c0b4050cf54203203812b2c1f0d9698823d8defc8b6516414a4e5e0c557e
@@ -842,6 +850,16 @@ $(BLOBS_STAMP):
 	fi
 	@echo "$(BOOTBIN_SHA256)  $(BLOBS_DIR)/QCM6490_bootbinaries_$(BLOBS_VERSION).zip" | sha256sum -c
 	@unzip -q -o $(BLOBS_DIR)/QCM6490_bootbinaries_$(BLOBS_VERSION).zip \
+		-d $(BLOBS_DIR)/bootbinaries
+	@# Immutable companion archive (carries cpucp.elf).
+	@if [ ! -f $(BLOBS_DIR)/QCM6490_bootbinaries_immutable_$(BLOBS_VERSION).zip ]; then \
+		echo "Downloading QCM6490 immutable boot binaries..."; \
+		curl --retry 5 -s -S -L $(BOOTBIN_IMM_URL) \
+			-o $(BLOBS_DIR)/QCM6490_bootbinaries_immutable_$(BLOBS_VERSION).zip || \
+			{ rm -f $(BLOBS_DIR)/QCM6490_bootbinaries_immutable_$(BLOBS_VERSION).zip; exit 1; }; \
+	fi
+	@echo "$(BOOTBIN_IMM_SHA256)  $(BLOBS_DIR)/QCM6490_bootbinaries_immutable_$(BLOBS_VERSION).zip" | sha256sum -c
+	@unzip -q -o $(BLOBS_DIR)/QCM6490_bootbinaries_immutable_$(BLOBS_VERSION).zip \
 		-d $(BLOBS_DIR)/bootbinaries
 	@find $(BLOBS_DIR)/bootbinaries -maxdepth 2 \
 		\( -name '*.elf' -o -name '*.mbn' -o -name '*.fv' -o -name '*.bin' \
