@@ -714,12 +714,12 @@ flash-efi:
 # The flash targets check this directory as a fallback when a file is absent
 # from kodiak/input/ and the Yocto deploy directory does not exist.
 ################################################################################
-BLOBS_VERSION  = 00126
+BLOBS_VERSION  = 00142
 BLOBS_DIR      = $(CURDIR)/kodiak/blobs
 BLOBS_STAMP    = $(BLOBS_DIR)/.fetch-complete
 
 BOOTBIN_URL    = https://softwarecenter.qualcomm.com/nexus/generic/product/chip/tech-package/QCM6490_bootbinaries.1.0/qcm6490_bootbinaries.1.0-test-device-public/$(BLOBS_VERSION)/QCM6490_bootbinaries_$(BLOBS_VERSION).zip
-BOOTBIN_SHA256 = 25b19ccc56d6e4133df15b7b5ac9353357efc66cbf17e9f84d0a459724e0e3e0
+BOOTBIN_SHA256 = 22e45047b3349a1611d27167616dd04f08e8351120ac121f6921b47b9f709216
 
 CDT_URL        = https://artifacts.codelinaro.org/artifactory/codelinaro-le/Qualcomm_Linux/QCS6490/cdt/rb3gen2-core-kit.zip
 CDT_SHA256     = 0fe1c0b4050cf54203203812b2c1f0d9698823d8defc8b6516414a4e5e0c557e

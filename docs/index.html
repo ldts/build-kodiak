@@ -32,22 +32,6 @@
     (QCM6490 / QCS6490) to enable TZ open firmware development.
   </p>
 
-  <div class="rtd-warn" style="border-left-width:6px; font-size:1rem;">
-    <strong style="font-size:1.08rem;">⚠ Boot firmware not yet compatible with the signed <code>tz.mbn</code></strong>
-    <p style="margin-top:.5rem;">
-      The firmware binaries fetched by <code>make fetch-blobs</code> (and shipped in
-      the current public device images) <strong>may not yet support the Open Boot
-      Firmware</strong>. On those images the device <code>xbl_sec</code> stage cannot
-      verify an OEM-signed BL2, so the <code>tz.mbn</code> produced by this build
-      <strong>will not boot</strong>.
-    </p>
-    <p style="margin-top:.5rem;">
-      This is expected during bring-up. <strong>We will update the tree once the
-      final firmware release is available</strong>, at which point the signed
-      <code>tz.mbn</code> boots as intended.
-    </p>
-  </div>
-
   <div class="rtd-note">
     <strong>Note:</strong> This is an active development build system; interfaces,
     manifest revisions, and flash procedures may change.
